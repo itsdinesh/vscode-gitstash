@@ -272,6 +272,11 @@
                 }
             },
             {
+                "command": "gitstash.patch",
+                "title": "Create Patch...",
+                "category": "GitStash"
+            },
+            {
                 "command": "gitstash.drop",
                 "title": "Drop...",
                 "category": "GitStash",
@@ -444,6 +449,10 @@
                 {
                     "command": "gitstash.clipboardInfo",
                     "when": "false"
+                },
+                {
+                    "command": "gitstash.patch",
+                    "when": "false"
                 }
             ],
             "scm/resourceState/context": [
@@ -508,7 +517,11 @@
                     "when": "view == gitstash.explorer && viewItem == stash",
                     "group": "menu@2"
                 },
-
+                {
+                    "command": "gitstash.patch",
+                    "when": "view == gitstash.explorer && viewItem == stash",
+                    "group": "menu@3"
+                },
                 {
                     "command": "gitstash.openCurrent",
                     "when": "view == gitstash.explorer && viewItem =~ /file:(modified|indexAdded|renamed)/",
@@ -617,7 +630,8 @@
         "vscode:prepublish": "npm run lint && webpack --mode development",
         "webpack": "webpack --mode development",
         "webpack-dev": "webpack --watch --mode development",
-        "test": "node ./out/test/runTest.js"
+        "test": "node ./out/test/runTest.js",
+        "build": "npm run lint && npm run webpack"
     },
     "dependencies": {
         "tmp": "0.2.1"

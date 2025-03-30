@@ -77,6 +77,8 @@ export class StashCommands {
 
         if (stashMessage) {
             params.push('-m', stashMessage)
+            params.push('--include-untracked')
+            params.push('--keep-index')
         }
 
         void this.workspaceGit.getRepositories().then((repositoryPaths: string[]) => {
@@ -95,7 +97,7 @@ export class StashCommands {
                 })
 
             Object.keys(repositories).forEach((repoPath) => {
-                this.exec(repoPath, params.concat(repositories[repoPath]), 'Selected files stashed')
+                this.exec(repoPath, params.concat(repositories[repoPath]), 'Selected files stashed', undefined, undefined, true)
             })
         })
     }
@@ -193,14 +195,33 @@ export class StashCommands {
     }
 
     /**
+     * Create patch from a stash.
+     */
+    public patch = (stashNode: StashNode): void => {
+        const params = ['stash', 'show', '-p', '-u']
+        const patchName = `${stashNode.name.split(': ')[1].replace(/\s+/g, '-')}.patch`
+        const path = require('path') as typeof import('path')
+        const fullPath = path.join(stashNode.path, patchName)
+
+        params.push(`stash@{${stashNode.index}}`)
+
+        this.exec(stashNode.path, params, `Patch created: ${patchName}`, stashNode, (output) => {
+            const fs = require('fs') as typeof import('fs')
+            const processedOutput = `${output.replace(/^\+ $/gm, '+').trimEnd()  }\n`
+            fs.writeFileSync(fullPath, processedOutput, { encoding: 'utf8' })
+        })
+    }
+
+    /**
      * Executes the git command.
      *
      * @param cwd            the current working directory
      * @param params         the array of command parameters
      * @param successMessage the string message to show on success
      * @param node           the involved node
+     * @param skipErrorLog   whether to skip error logging
      */
-    private exec(cwd: string, params: string[], successMessage: string, node?: StashNode): void {
+    private exec(cwd: string, params: string[], successMessage: string, node?: StashNode, callback?: (output: string) => void, skipErrorLog?: boolean): void {
         this.stashGit.exec(params, cwd)
             .then(
                 (result: string) => {
@@ -215,14 +236,22 @@ export class StashCommands {
                     else {
                         this.logResult(params, 'message', result, successMessage, node)
                     }
+
+                    if (callback) {
+                        callback(result)
+                    }
                 },
                 (error: string) => {
-                    const excerpt = error.substring(error.indexOf(':') + 1).trim()
-                    this.logResult(params, 'error', error, excerpt, node)
+                    if (!skipErrorLog) {
+                        const excerpt = error.substring(error.indexOf(':') + 1).trim()
+                        this.logResult(params, 'error', error, excerpt, node)
+                    }
                 },
             )
             .catch((error: Error) => {
-                this.logResult(params, 'error', error.toString())
+                if (!skipErrorLog) {
+                    this.logResult(params, 'error', error.toString())
+                }
             })
     }
 

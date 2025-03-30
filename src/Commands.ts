@@ -149,6 +149,19 @@ export class Commands {
     }
 
     /**
+     * Applies the selected stash or selects one and continue.
+     *
+     * @param stashNode the involved node
+     */
+    public patch = (stashNode?: StashNode): void => {
+        this.runOnStash(
+            stashNode,
+            (stashNode: StashNode) => this.createPatch(stashNode),
+            'Create patch',
+        )
+    }
+
+    /**
      * Branches the selected stash or selects one and continue.
      *
      * @param stashNode the involved node
@@ -315,6 +328,10 @@ export class Commands {
                     this.stashCommands.apply(stashNode, option.withIndex)
                 }
             })
+    }
+
+    private createPatch = (stashNode: StashNode): void => {
+        this.stashCommands.patch(stashNode)
     }
 
     /**

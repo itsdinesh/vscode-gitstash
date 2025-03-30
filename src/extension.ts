@@ -66,6 +66,7 @@ export function activate(context: ExtensionContext): void {
 
         commands.registerCommand('gitstash.pop', stashCommands.pop),
         commands.registerCommand('gitstash.apply', stashCommands.apply),
+        commands.registerCommand('gitstash.patch', stashCommands.patch),
         commands.registerCommand('gitstash.branch', stashCommands.branch),
         commands.registerCommand('gitstash.drop', stashCommands.drop),
 

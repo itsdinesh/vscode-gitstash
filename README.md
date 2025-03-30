@@ -1,6 +1,6 @@
 # Git Stash
 
-Seamlessly integration of git stash functionalities to your editor
+Seamlessly integration of git stash functionalities to your editor with personal changes to enable creating patch file from stashes, and allow stashing untracked files by default.
 
 ## Features
 
