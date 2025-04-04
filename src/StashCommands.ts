@@ -72,7 +72,7 @@ export class StashCommands {
      * @param filePaths    an array with the list of the file paths to stash
      * @param stashMessage an optional message to set on the stash
      */
-    public push = (filePaths: string[], stashMessage?: string): void => {
+    public push = (filePaths: string[], stashMessage?: string, successMessage?: string): void => {
         const params = ['stash', 'push']
 
         if (stashMessage) {
@@ -97,7 +97,7 @@ export class StashCommands {
                 })
 
             Object.keys(repositories).forEach((repoPath) => {
-                this.exec(repoPath, params.concat(repositories[repoPath]), 'Selected files stashed', undefined, undefined, true)
+                this.exec(repoPath, params.concat(repositories[repoPath]), successMessage || 'Selected files stashed', undefined, undefined, true)
             })
         })
     }
@@ -129,7 +129,7 @@ export class StashCommands {
     /**
      * Applies a stash.
      */
-    public apply = (stashNode: StashNode, withIndex: boolean): void => {
+    public apply = (stashNode: StashNode, withIndex: boolean, isSkipError?: boolean): void => {
         const params = ['stash', 'apply']
 
         if (withIndex) {
@@ -138,7 +138,7 @@ export class StashCommands {
 
         params.push(`stash@{${stashNode.index}}`)
 
-        this.exec(stashNode.path, params, 'Stash applied', stashNode)
+        this.exec(stashNode.path, params, 'Stash applied', stashNode, undefined, isSkipError)
     }
 
     /**
@@ -199,7 +199,7 @@ export class StashCommands {
      */
     public patch = (stashNode: StashNode): void => {
         const params = ['stash', 'show', '-p', '-u']
-        const patchName = `${stashNode.name.split(': ')[1].replace(/\s+/g, '-')}.patch`
+        const patchName = `${stashNode.name.split(': ')[1].replace(/\s+/g, '-').toLowerCase()}.patch`
         const path = require('path') as typeof import('path')
         const fullPath = path.join(stashNode.path, patchName)
 

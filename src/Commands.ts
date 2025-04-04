@@ -57,6 +57,32 @@ export class Commands {
             })
     }
 
+    public stashUnstashSelected = (...resourceStates: vscode.SourceControlResourceState[]): void => {
+        const paths = resourceStates.map(
+            (resourceState: vscode.SourceControlResourceState) => resourceState.resourceUri.fsPath
+        )
+
+        void vscode.window
+            .showInputBox({
+                placeHolder: 'Stash message',
+                prompt: 'Optionally provide a stash message',
+            })
+            .then((stashMessage) => {
+                if (typeof stashMessage === 'string') {
+                    // Create a promise from the stash operation
+                    return Promise.resolve(this.stashCommands.push(paths, stashMessage, 'Selected files stashed and unstashed'))
+                        .then(() =>
+                            // Wait a reasonable time for Git to complete its work
+                            new Promise<void>((resolve) => {
+                                setTimeout(() => {
+                                    void this.applyLatestStash().then(resolve)
+                                }, 500)
+                            })
+                        )
+                }
+            })
+    }
+
     /**
      * Shows a stashed file diff document.
      *
@@ -328,6 +354,59 @@ export class Commands {
                     this.stashCommands.apply(stashNode, option.withIndex)
                 }
             })
+    }
+
+    /**
+     * Apply latest stash automatically without prompting the user
+     * @returns Promise that resolves when the operation is complete
+     */
+    private applyLatestStash = async (): Promise<void> => {
+        try {
+            // Get repositories in the workspace
+            const repositories = await this.workspaceGit.getRepositories()
+
+            if (repositories.length === 0) {
+                void vscode.window.showInformationMessage('There are no git repositories.')
+                return
+            }
+
+            // If multiple repositories exist, use the active editor's path to determine which one
+            let repositoryPath = repositories[0]
+
+            if (repositories.length > 1 && vscode.window.activeTextEditor) {
+                const editorPath = vscode.window.activeTextEditor.document.uri.fsPath
+                const matchingRepo = repositories
+                    .sort()
+                    .reverse()
+                    .find((repo) => editorPath.indexOf(repo) !== -1)
+
+                if (matchingRepo) {
+                    repositoryPath = matchingRepo
+                }
+            }
+
+            // Create repository node
+            const repositoryNode = this.stashNodeFactory.createRepositoryNode(repositoryPath)
+
+            // Get stashes for the repository
+            const stashes = await this.stashGit.getStashes(repositoryPath)
+
+            if (stashes.length === 0) {
+                void vscode.window.showInformationMessage('There are no stashed changes in the repository.')
+                return
+            }
+
+            // Get the latest stash and create a node for it
+            const latestStash = stashes[0]
+            const stashNode = this.stashNodeFactory.createStashNode(latestStash, repositoryNode)
+
+            // Apply the stash without reindexing
+            this.stashCommands.apply(stashNode, false, true)
+        }
+        catch (error) {
+            // Log the error but don't show it to the user unless it's critical
+            console.error('Error in applyLatestStash:', error)
+        }
     }
 
     private createPatch = (stashNode: StashNode): void => {

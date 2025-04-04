@@ -75,6 +75,7 @@ export function activate(context: ExtensionContext): void {
         commands.registerCommand('gitstash.openCurrent', stashCommands.openFile),
 
         commands.registerCommand('gitstash.stashSelected', stashCommands.stashSelected),
+        commands.registerCommand('gitstash.stashUnstashSelected', stashCommands.stashUnstashSelected),
 
         commands.registerCommand('gitstash.clipboardRepositoryPath', stashCommands.toClipboardFromObject),
         commands.registerCommand('gitstash.clipboardStashMessage', stashCommands.toClipboardFromObject),
