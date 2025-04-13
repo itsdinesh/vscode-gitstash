@@ -207,7 +207,7 @@ export class StashCommands {
 
         this.exec(stashNode.path, params, `Patch created: ${patchName}`, stashNode, (output) => {
             const fs = require('fs') as typeof import('fs')
-            const processedOutput = `${output.replace(/^\+ $/gm, '+').trimEnd()  }\n`
+            const processedOutput = output.trimEnd() + '\n'
             fs.writeFileSync(fullPath, processedOutput, { encoding: 'utf8' })
         })
     }
