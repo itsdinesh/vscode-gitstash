@@ -11,10 +11,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
           node-version: 18.x
           cache: 'npm'
@@ -35,7 +35,7 @@ jobs:
         run: npm run package
 
       - name: Upload VSIX package
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v5
         with:
           name: gitstash-vsix
           path: '*.vsix'
