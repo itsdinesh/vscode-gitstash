@@ -13,6 +13,7 @@ import Config from '../Config'
 import GitBridge from '../GitBridge'
 import StashLabels from '../StashLabels'
 import StashNode from '../StashNode/StashNode'
+import NodeType from '../StashNode/NodeType'
 import StashNodeRepository from '../StashNode/StashNodeRepository'
 import TreeItemFactory from './TreeItemFactory'
 import UriGenerator from '../uriGenerator'
@@ -28,6 +29,8 @@ export default class implements TreeDataProvider<StashNode> {
     private rawStashes = {}
     private loadTimeout: NodeJS.Timer
     private showExplorer: boolean
+    private searchText: string = ''
+    private treeView: TreeView<StashNode> | null = null
 
     constructor(
         config: Config,
@@ -46,13 +49,28 @@ export default class implements TreeDataProvider<StashNode> {
      * Creates a tree view.
      */
     public createTreeView(): TreeView<StashNode> {
-        const treeView = window.createTreeView('gitstash.explorer', {
+        this.treeView = window.createTreeView('gitstash.explorer', {
             treeDataProvider: this,
             showCollapseAll: true,
             canSelectMany: false,
         })
 
-        return treeView
+        this.updateTreeViewDescription()
+
+        return this.treeView
+    }
+
+    /**
+     * Updates the tree view description to show search status.
+     */
+    private updateTreeViewDescription(): void {
+        if (this.treeView) {
+            if (this.searchText) {
+                this.treeView.description = `🔍 "${this.searchText}"`
+            } else {
+                this.treeView.description = undefined
+            }
+        }
     }
 
     /**
@@ -78,13 +96,67 @@ export default class implements TreeDataProvider<StashNode> {
     }
 
     /**
+     * Shows a search input box and filters stashes with live updates.
+     * Press Enter to keep the filter, or Escape to cancel.
+     */
+    public search = (): void => {
+        const inputBox = window.createInputBox()
+        inputBox.placeholder = 'Search stashes by description, branch, or index'
+        inputBox.prompt = 'Type to filter (live) -'
+        inputBox.value = this.searchText
+        inputBox.ignoreFocusOut = false
+
+        let accepted = false
+
+        // Update search on every keystroke
+        inputBox.onDidChangeValue((value) => {
+            this.searchText = value
+            void commands.executeCommand('setContext', 'gitstash.explorer.hasSearch', value.length > 0)
+            this.updateTreeViewDescription()
+            this.onDidChangeTreeDataEmitter.fire()
+        })
+
+        // Keep filter when Enter is pressed
+        inputBox.onDidAccept(() => {
+            accepted = true
+            inputBox.hide()
+        })
+
+        // Handle hide/cancel
+        inputBox.onDidHide(() => {
+            // If not accepted (Escape or click away), clear the search
+            if (!accepted) {
+                this.searchText = ''
+                void commands.executeCommand('setContext', 'gitstash.explorer.hasSearch', false)
+                this.updateTreeViewDescription()
+                this.onDidChangeTreeDataEmitter.fire()
+            }
+            inputBox.dispose()
+        })
+
+        inputBox.show()
+    }
+
+    /**
+     * Clears the search filter.
+     */
+    public clearSearch = (): void => {
+        this.searchText = ''
+        void commands.executeCommand('setContext', 'gitstash.explorer.hasSearch', false)
+        this.updateTreeViewDescription()
+        this.onDidChangeTreeDataEmitter.fire()
+    }
+
+    /**
      * Gets the tree children, which may be repositories, stashes or files.
      *
      * @param node the parent node for the requested children
      */
     public getChildren(node?: StashNode): Thenable<StashNode[]> | StashNode[] {
-        if (node && node.children) {
-            return this.prepareChildren(node, node.children)
+        // If we have a search active and this is a repository node, don't use cache
+        if (node && node.children && !(this.searchText && node.type === NodeType.Repository)) {
+            const filteredChildren = this.filterChildren(node, node.children)
+            return this.prepareChildren(node, filteredChildren)
         }
 
         const children = !node
@@ -93,7 +165,41 @@ export default class implements TreeDataProvider<StashNode> {
 
         return children.then((children: StashNode[]) => {
             node && node.setChildren(children)
-            return this.prepareChildren(node, children)
+            const filteredChildren = this.filterChildren(node, children)
+            return this.prepareChildren(node, filteredChildren)
+        })
+    }
+
+    /**
+     * Filters children based on search text.
+     *
+     * @param parent   the parent node
+     * @param children the children to filter
+     */
+    private filterChildren(parent: StashNode | null, children: StashNode[]): StashNode[] {
+        // Only filter if we have search text and parent is a repository
+        if (!this.searchText || !parent || parent.type !== NodeType.Repository) {
+            return children
+        }
+
+        const searchLower = this.searchText.toLowerCase()
+        return children.filter((child: StashNode) => {
+            // Only filter stash nodes
+            if (child.type !== NodeType.Stash) {
+                return true
+            }
+
+            // Search in stash name (includes branch and description)
+            if (child.name && child.name.toLowerCase().includes(searchLower)) {
+                return true
+            }
+
+            // Search in index
+            if (child.index !== undefined && child.index.toString().includes(searchLower)) {
+                return true
+            }
+
+            return false
         })
     }
 

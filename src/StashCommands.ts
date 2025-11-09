@@ -213,6 +213,40 @@ export class StashCommands {
     }
 
     /**
+     * Applies a patch file to the working directory.
+     *
+     * @param patchFilePath the path to the patch file
+     */
+    public applyPatchFile = (patchFilePath: string): void => {
+        const path = require('path') as typeof import('path')
+        const fs = require('fs') as typeof import('fs')
+
+        if (!fs.existsSync(patchFilePath)) {
+            void vscode.window.showErrorMessage(`Patch file not found: ${patchFilePath}`)
+            return
+        }
+
+        // Find the repository path for this patch file
+        void this.workspaceGit.getRepositories().then((repositoryPaths: string[]) => {
+            const repoPath = repositoryPaths
+                .sort()
+                .reverse()
+                .find((repo) => patchFilePath.indexOf(repo) === 0)
+
+            if (!repoPath) {
+                void vscode.window.showErrorMessage('Could not find repository for patch file.')
+                return
+            }
+
+            const params = ['apply', patchFilePath]
+            const patchFileName = path.basename(patchFilePath)
+            const successMessage = `Patch ${patchFileName} applied successfully`
+
+            this.exec(repoPath, params, successMessage, undefined, undefined, false)
+        })
+    }
+
+    /**
      * Executes the git command.
      *
      * @param cwd            the current working directory

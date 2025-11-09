@@ -57,6 +57,37 @@ export class Commands {
             })
     }
 
+    /**
+     * Applies a patch file from the scm changes list.
+     * Only works on .patch files.
+     *
+     * @param resourceStates the list of the resources (should be .patch files)
+     */
+    public applyPatch = (...resourceStates: vscode.SourceControlResourceState[]): void => {
+        // Check if any selected files are patch files
+        const allFiles = resourceStates.map(r => r.resourceUri.fsPath)
+        const patchFiles = allFiles.filter(f => f.endsWith('.patch'))
+        const nonPatchFiles = allFiles.filter(f => !f.endsWith('.patch'))
+
+        // If only non-patch files selected, show helpful message
+        if (patchFiles.length === 0 && nonPatchFiles.length > 0) {
+            void vscode.window.showInformationMessage(
+                'This command only works with .patch files. Please select a .patch file.'
+            )
+            return
+        }
+
+        // If no files at all, silently ignore
+        if (patchFiles.length === 0) {
+            return
+        }
+
+        // Apply each patch file directly
+        patchFiles.forEach((patchFile) => {
+            this.stashCommands.applyPatchFile(patchFile)
+        })
+    }
+
     public stashUnstashSelected = (...resourceStates: vscode.SourceControlResourceState[]): void => {
         const paths = resourceStates.map(
             (resourceState: vscode.SourceControlResourceState) => resourceState.resourceUri.fsPath

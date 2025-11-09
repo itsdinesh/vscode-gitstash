@@ -53,6 +53,8 @@ export function activate(context: ExtensionContext): void {
 
         commands.registerCommand('gitstash.explorer.toggle', treeProvider.toggle),
         commands.registerCommand('gitstash.explorer.refresh', treeProvider.refresh),
+        commands.registerCommand('gitstash.explorer.search', treeProvider.search),
+        commands.registerCommand('gitstash.explorer.clearSearch', treeProvider.clearSearch),
 
         commands.registerCommand('gitstash.stash', stashCommands.stash),
         commands.registerCommand('gitstash.clear', stashCommands.clear),
@@ -76,6 +78,7 @@ export function activate(context: ExtensionContext): void {
 
         commands.registerCommand('gitstash.stashSelected', stashCommands.stashSelected),
         commands.registerCommand('gitstash.stashUnstashSelected', stashCommands.stashUnstashSelected),
+        commands.registerCommand('gitstash.applyPatch', stashCommands.applyPatch),
 
         commands.registerCommand('gitstash.clipboardRepositoryPath', stashCommands.toClipboardFromObject),
         commands.registerCommand('gitstash.clipboardStashMessage', stashCommands.toClipboardFromObject),

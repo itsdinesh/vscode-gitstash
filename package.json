@@ -2,8 +2,8 @@
     "name": "gitstash",
     "displayName": "Git Stash",
     "description": "Give extra stash abilities to Code. Visually browse stashes, review and extract changes. Get all stash commands and more.",
-    "version": "5.3.1",
-    "publisher": "Arturo Rodríguez",
+    "version": "5.4.0",
+    "publisher": "artrz",
     "license": "MIT",
     "icon": "resources/logo.png",
     "galleryBanner": {
@@ -34,7 +34,13 @@
     },
     "main": "./dist/extension",
     "activationEvents": [
-        "*"
+        "onView:gitstash.explorer",
+        "onCommand:gitstash.stash",
+        "onCommand:gitstash.pop",
+        "onCommand:gitstash.apply",
+        "onCommand:gitstash.clear",
+        "onCommand:gitstash.explorer.toggle",
+        "workspaceContains:**/.git"
     ],
     "capabilities": {
         "untrustedWorkspaces": {
@@ -231,6 +237,18 @@
                 "icon": "$(refresh)"
             },
             {
+                "command": "gitstash.explorer.search",
+                "title": "Search stashes",
+                "category": "GitStash",
+                "icon": "$(search)"
+            },
+            {
+                "command": "gitstash.explorer.clearSearch",
+                "title": "Clear search",
+                "category": "GitStash",
+                "icon": "$(clear-all)"
+            },
+            {
                 "command": "gitstash.stash",
                 "title": "Stash...",
                 "category": "GitStash",
@@ -274,6 +292,11 @@
             {
                 "command": "gitstash.patch",
                 "title": "Create Patch...",
+                "category": "GitStash"
+            },
+            {
+                "command": "gitstash.applyPatch",
+                "title": "Apply patch (.patch files only)",
                 "category": "GitStash"
             },
             {
@@ -376,6 +399,14 @@
                     "when": "hasGitRepository && gitstash.explorer.enabled"
                 },
                 {
+                    "command": "gitstash.explorer.search",
+                    "when": "hasGitRepository && gitstash.explorer.enabled"
+                },
+                {
+                    "command": "gitstash.explorer.clearSearch",
+                    "when": "hasGitRepository && gitstash.explorer.enabled"
+                },
+                {
                     "command": "gitstash.explorer.toggle",
                     "when": "hasGitRepository"
                 },
@@ -462,6 +493,10 @@
                 {
                     "command": "gitstash.patch",
                     "when": "false"
+                },
+                {
+                    "command": "gitstash.applyPatch",
+                    "when": "false"
                 }
             ],
             "scm/resourceState/context": [
@@ -472,13 +507,27 @@
                 {
                     "command": "gitstash.stashUnstashSelected",
                     "when": "scmProvider == git && scmResourceGroup =~ /^workingTree|index$/"
+                },
+                {
+                    "command": "gitstash.applyPatch",
+                    "when": "scmProvider == git && scmResourceGroup =~ /^workingTree|index$/"
                 }
             ],
             "view/title": [
                 {
                     "command": "gitstash.explorer.refresh",
                     "when": "view == gitstash.explorer && config.gitstash.explorer.buttons",
-                    "group": "navigation"
+                    "group": "navigation@1"
+                },
+                {
+                    "command": "gitstash.explorer.search",
+                    "when": "view == gitstash.explorer && config.gitstash.explorer.buttons",
+                    "group": "navigation@2"
+                },
+                {
+                    "command": "gitstash.explorer.clearSearch",
+                    "when": "view == gitstash.explorer && config.gitstash.explorer.buttons && gitstash.explorer.hasSearch",
+                    "group": "navigation@3"
                 }
             ],
             "view/item/context": [
@@ -640,11 +689,14 @@
     "scripts": {
         "lint": "eslint -c .eslintrc.js --ext .ts ./src",
         "lint-fix": "npm run lint -- --fix",
-        "vscode:prepublish": "npm run lint && webpack --mode development",
+        "vscode:prepublish": "npm run build:prod",
         "webpack": "webpack --mode development",
         "webpack-dev": "webpack --watch --mode development",
         "test": "node ./out/test/runTest.js",
-        "build": "npm run lint && npm run webpack"
+        "build": "npm run lint && webpack --mode development",
+        "build:prod": "npm run lint && webpack --mode production",
+        "package": "vsce package",
+        "publish": "vsce publish"
     },
     "dependencies": {
         "tmp": "0.2.1"
