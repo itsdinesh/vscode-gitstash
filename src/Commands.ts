@@ -65,9 +65,9 @@ export class Commands {
      */
     public applyPatch = (...resourceStates: vscode.SourceControlResourceState[]): void => {
         // Check if any selected files are patch files
-        const allFiles = resourceStates.map(r => r.resourceUri.fsPath)
-        const patchFiles = allFiles.filter(f => f.endsWith('.patch'))
-        const nonPatchFiles = allFiles.filter(f => !f.endsWith('.patch'))
+        const allFiles = resourceStates.map((r) => r.resourceUri.fsPath)
+        const patchFiles = allFiles.filter((f) => f.endsWith('.patch'))
+        const nonPatchFiles = allFiles.filter((f) => !f.endsWith('.patch'))
 
         // If only non-patch files selected, show helpful message
         if (patchFiles.length === 0 && nonPatchFiles.length > 0) {

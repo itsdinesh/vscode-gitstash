@@ -11,9 +11,9 @@ import {
 } from 'vscode'
 import Config from '../Config'
 import GitBridge from '../GitBridge'
+import NodeType from '../StashNode/NodeType'
 import StashLabels from '../StashLabels'
 import StashNode from '../StashNode/StashNode'
-import NodeType from '../StashNode/NodeType'
 import StashNodeRepository from '../StashNode/StashNodeRepository'
 import TreeItemFactory from './TreeItemFactory'
 import UriGenerator from '../uriGenerator'
@@ -29,7 +29,7 @@ export default class implements TreeDataProvider<StashNode> {
     private rawStashes = {}
     private loadTimeout: NodeJS.Timer
     private showExplorer: boolean
-    private searchText: string = ''
+    private searchText = ''
     private treeView: TreeView<StashNode> | null = null
 
     constructor(
@@ -67,7 +67,8 @@ export default class implements TreeDataProvider<StashNode> {
         if (this.treeView) {
             if (this.searchText) {
                 this.treeView.description = `🔍 "${this.searchText}"`
-            } else {
+            }
+            else {
                 this.treeView.description = undefined
             }
         }
