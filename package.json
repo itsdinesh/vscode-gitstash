@@ -2,7 +2,7 @@
     "name": "gitstash",
     "displayName": "Git Stash",
     "description": "Give extra stash abilities to Code. Visually browse stashes, review and extract changes. Get all stash commands and more.",
-    "version": "5.4.0",
+    "version": "5.4.1",
     "publisher": "artrz",
     "license": "MIT",
     "icon": "resources/logo.png",
@@ -34,6 +34,8 @@
     },
     "main": "./dist/extension",
     "activationEvents": [
+        "onStartupFinished",
+        "onExtension:vscode.git",
         "onView:gitstash.explorer",
         "onCommand:gitstash.stash",
         "onCommand:gitstash.pop",
@@ -322,7 +324,7 @@
                 "category": "GitStash",
                 "icon": "$(git-compare)"
             },
-           {
+            {
                 "command": "gitstash.diffSourceCurrent",
                 "title": "Compare Stash source ⟷ Current",
                 "category": "GitStash",
