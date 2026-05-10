@@ -51,22 +51,22 @@ export default class StashGit extends Git {
         const params = [
             'stash',
             'list',
-            '--format="%ci %h %s"',
+            '--format="%ci|%H|%gs"',
         ]
 
         const stashList = (await this.exec(params, cwd)).trim()
 
-        const sep1 = 26  // date length
-        const sep2 = 34  // date length + (1) space + (7) hash length
-
         const list: Stash[] = !stashList.length ? [] : stashList
             .split(/\r?\n/g)
-            .map((stash, index) => ({
-                index,
-                date: stash.substring(1, sep1),
-                hash: stash.substring(sep1 + 1, sep2),
-                description: stash.substring(sep2 + 1).slice(0, -1).trim(),
-            }))
+            .map((stash, index) => {
+                const parts = stash.substring(1, stash.length - 1).split('|')
+                return {
+                    index,
+                    date: parts[0],
+                    hash: parts[1],
+                    description: parts[2],
+                }
+            })
 
         return list
     }
@@ -216,5 +216,56 @@ export default class StashGit extends Git {
         ]
 
         return this.exec(params, cwd)
+    }
+
+    /**
+     * Renames a stash.
+     *
+     * @param cwd        the current working directory
+     * @param index      the int with the stash index
+     * @param newMessage the string with the new stash message
+     */
+    public async renameStash(cwd: string, index: number, newMessage: string): Promise<void> {
+        const stashes = await this.getStashes(cwd)
+        if (index >= stashes.length) {
+            throw new Error(`Stash index ${index} not found.`)
+        }
+
+        const targetStash = stashes[index]
+
+        // 1. Determine the full message for the new commit
+        let fullMessage = newMessage
+        const prefixMatch = targetStash.description.match(/^(WIP on |On )(.+?): /)
+        if (prefixMatch && !newMessage.match(/^(WIP on |On )(.+?): /)) {
+            fullMessage = `${prefixMatch[0]}${newMessage}`
+        }
+
+        // 2. Create a new commit object for the renamed stash
+        // This ensures the hash is different, so 'stash store' will always push
+        const parents = (await this.exec(['rev-list', '--parents', '-n', '1', targetStash.hash], cwd))
+            .trim().split(' ').slice(1)
+
+        const commitArgs = ['commit-tree', `${targetStash.hash}^{tree}`]
+        for (const parent of parents) {
+            commitArgs.push('-p', parent)
+        }
+        commitArgs.push('-m', fullMessage)
+
+        const newHash = (await this.exec(commitArgs, cwd)).trim()
+
+        // 3. Rebuild the stack from index down to 0
+        for (let i = index; i >= 0; i--) {
+            const stash = stashes[i]
+            const hash = (i === index) ? newHash : stash.hash
+            const message = (i === index) ? fullMessage : stash.description
+
+            await this.exec(['stash', 'store', '-m', message, hash], cwd)
+        }
+
+        // 4. Drop the old entries which are now shifted down the stack
+        const dropIndex = index + 1
+        for (let i = index; i >= 0; i--) {
+            await this.exec(['stash', 'drop', '--quiet', `stash@{${dropIndex + i}}`], cwd)
+        }
     }
 }

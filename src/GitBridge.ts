@@ -42,4 +42,13 @@ export default class GitBridge {
                 return this.stashGit.getThirdParentContents(fileNode.parent.path, fileNode.parent.index, fileNode.name)
         }
     }
+    /**
+     * Renames a stash.
+     *
+     * @param node       the stash node to be renamed
+     * @param newMessage the string with the new stash message
+     */
+    public async renameStash(node: StashNode, newMessage: string): Promise<void> {
+        await this.stashGit.renameStash(node.path, node.index, newMessage)
+    }
 }

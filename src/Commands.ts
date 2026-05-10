@@ -245,6 +245,19 @@ export class Commands {
     }
 
     /**
+     * Renames the selected stash or selects one and continue.
+     *
+     * @param stashNode the involved node
+     */
+    public rename = (stashNode?: StashNode): void => {
+        this.runOnStash(
+            stashNode,
+            (stashNode: StashNode) => this.renamePerform(stashNode),
+            'Stash rename',
+        )
+    }
+
+    /**
      * Generates a stash for the given repository.
      *
      * @param repositoryNode the repository node
@@ -484,6 +497,30 @@ export class Commands {
                 this.stashCommands.drop(stashNode)
             }
         })
+    }
+
+    /**
+     * Confirms and renames.
+     *
+     * @param stashNode the involved node
+     */
+    private renamePerform = (stashNode: StashNode): void => {
+        const stashLabel = this.stashLabels.getName(stashNode)
+        const repositoryLabel = this.stashLabels.getName(stashNode.parent)
+
+        void vscode.window
+            .showInputBox({
+                placeHolder: `Stash rename › ${repositoryLabel} › ${stashLabel} › ...`,
+                prompt: 'Write a new message',
+                value: stashLabel,
+            })
+            .then((newMessage) => {
+                if (typeof newMessage === 'string') {
+                    !newMessage.length
+                        ? void vscode.window.showErrorMessage('A message is required.')
+                        : this.stashCommands.rename(stashNode, newMessage)
+                }
+            })
     }
 
     /**

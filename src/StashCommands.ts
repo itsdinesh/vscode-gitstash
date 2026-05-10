@@ -169,6 +169,27 @@ export class StashCommands {
     }
 
     /**
+     * Renames a stash.
+     */
+    public rename = (stashNode: StashNode, newMessage: string): void => {
+        this.stashGit.renameStash(stashNode.path, stashNode.index, newMessage)
+            .then(
+                () => {
+                    this.logResult(['stash', 'rename'], 'message', 'Stash renamed', 'Stash renamed', stashNode)
+                },
+                (error: string) => {
+                    const excerpt = typeof error === 'string'
+                        ? error.substring(error.indexOf(':') + 1).trim()
+                        : (error as Error).message
+                    this.logResult(['stash', 'rename'], 'error', error.toString(), excerpt, stashNode)
+                },
+            )
+            .catch((error: Error) => {
+                this.logResult(['stash', 'rename'], 'error', error.toString())
+            })
+    }
+
+    /**
      * Applies changes from a file.
      */
     public applySingle = (fileNode: StashNode): void => {

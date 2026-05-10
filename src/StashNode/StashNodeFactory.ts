@@ -14,12 +14,15 @@ export default class {
      */
     public createRepositoryNode(path: string): StashNode {
         // may be undefined if the directory is not part of the workspace
-        // this happens on upper directories by negative search depth setting
         const workspaceFolder = workspace.getWorkspaceFolder(Uri.file(path))
+        let name = basename(path)
+        if (workspaceFolder && Uri.file(path).fsPath === workspaceFolder.uri.fsPath) {
+            name = workspaceFolder.name
+        }
 
         return new StashNode({
             type: NodeType.Repository,
-            name: workspaceFolder ? workspaceFolder.name : basename(path),
+            name: name,
             index: undefined,
             parent: undefined,
             date: undefined,
